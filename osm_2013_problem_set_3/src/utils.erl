@@ -5,14 +5,38 @@
 
 -module(utils). 
 
--export([seqs/1, filter/2, split/2]).
+-export([seqs/1, filter/2, split/2,line/1,printList/1,decToBase/2]).
 
 %% To use EUnit we must include this.
 -include_lib("eunit/include/eunit.hrl").
 
 -compile(export_all). 
 
+line (0) ->
+    io:fwrite("~n"),
+    ok;
+line (N) -> 
+    io:fwrite("-"),
+    line(N-1).
+     
+printList ([]) ->
+    io:fwrite("~n"),
+    ok;
+printList ([H|T]) ->
+    io:fwrite("~p",[H]),
+    printList (T).
 
+pow (0,P) -> 1;
+pow (N,P) ->
+    P*pow(N-1,P).
+decToBase(Dec,Base) ->
+    list_to_integer(lists:flatten(io_lib:format("~p", [Dec])),Base).
+ 
+%%    decToBaseAux(Dec,Base,1,0).
+decToBaseAux(0,Base,P,A) ->
+    A;
+decToBaseAux(Dec,Base,P,A) ->
+    decToBaseAux(Dec div 10, Base, P*Base, A+(Dec rem 10)*P).
 %% @doc Generates a list of lists of increasing sequences of integers
 %% starting with the empty list and ending with [1,2, ..., N].
 %% === Example ===
