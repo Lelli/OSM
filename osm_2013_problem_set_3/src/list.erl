@@ -75,15 +75,19 @@ pmax(List, _, _) ->
 %% Find the max value in List and send result to Collect. 
 
 worker(List, Collect, Death) ->
-    death:gamble(Death),
-    Collect!list:max(List).
-
+     Temp = death:fake_gamble(Death), 
+    if Temp == live ->
+        Collect!list:max(List);
+    true ->
+        self() ! worker(List, Collect, death:start(60))
+    end.
 %% Wait for results from all workers. 
 
 collect(N, Maxes) when length(Maxes) < N ->
     receive 
 	{'EXIT', _PID, random_death} ->
-	    collect(N, [-666|Maxes]);
+	    %spawn_link(fun() -> worker(Maxe,self(),death:start(60)) end);
+        collect(N, [-666|Maxes]);
 	{'EXIT', _PID, normal} ->
 	    collect(N, Maxes);
 	Max -> 
