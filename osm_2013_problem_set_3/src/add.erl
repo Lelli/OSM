@@ -1,6 +1,7 @@
 %% @doc Erlang mini project.
 -module(add).
--export([start/3, start/4]).
+-export([start/3, start/4, decode/1]).
+-include_lib("eunit/include/eunit.hrl").
 
 %% @doc Calculates A+B using only one process and returns the desired value in base Base.
 -spec start(A,B,Base) -> ok when 
@@ -165,9 +166,9 @@ genAux(Str,N,A) ->
       H::integer().
 decode([H|_]) ->
     Ascii = H,
-    if Ascii >= 48; Ascii =< 57
+    if Ascii >= 48, Ascii =< 57
        ->  Ascii - 48;
-       Ascii >= 65; Ascii =< 90
+       Ascii >= 65, Ascii =< 90
        ->  Ascii - 55
     end.
 
@@ -184,4 +185,20 @@ encode(Val,Base) ->
     
 
 % ---------------------- TEST -------------------
+
+decode_test_() ->
+    [?_assertEqual(17,decode("Hej")),
+    ?_assertEqual(2, decode("25"))].
+encode_test_() ->
+    [?_assertEqual("H",encode(17,26)),
+    ?_assertEqual(10,encode(112,11))].
+generate_test_() ->
+    [?_assertEqual(["A","A","A","A","A"],generate("A",5)),
+    ?_assertEqual(["-.-","-.-","-.-","-.-"],generate("-.-",4))].
+split_test_() ->
+    [?_assertEqual({[1,2],[3,4,5,6,7,8]},split([1,2,3,4,5,6,7,8],2)),
+    ?_assertEqual({[1,2,3,4,5,6,7,8],[]},split([1,2,3,4,5,6,7,8],9))].
+fill_test_() ->
+    [?_assertEqual([0,0,1,2,3,4,5],fill([1,2,3,4,5],7)),
+    ?_assertEqual([1,2,3,4,5],fill([1,2,3,4,5],5))].
 
