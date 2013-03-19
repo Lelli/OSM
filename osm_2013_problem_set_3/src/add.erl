@@ -28,7 +28,7 @@ start(A,B, Base) ->
       Options::[Option].
 
 start(A,B,Base, Options) ->
-    ok.
+    ok. FIN ÄNDRING hihi
 
 
 start_help(0,0,_,[H|T],Result) ->
