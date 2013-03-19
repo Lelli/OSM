@@ -66,8 +66,8 @@ split(L, N, Lists) ->
 pmax(List, N, Death) when length(List) > N ->
     Lists = split(List, N),
     CollectPID = self(),
-    [spawn_link(fun() -> worker(L, CollectPID, Death) end) || L <- Lists],
-    Maxes = collect(length(Lists), []),
+    Workers = [{spawn_link(fun() -> worker(L, CollectPID, Death) end),L } || L <- Lists],
+    Maxes = collect(length(Lists), [], Workers),
     pmax(Maxes, N, Death);
 pmax(List, _, _) ->
     list:max(List). 
@@ -75,26 +75,26 @@ pmax(List, _, _) ->
 %% Find the max value in List and send result to Collect. 
 
 worker(List, Collect, Death) ->
-     Temp = death:fake_gamble(Death), 
-    if Temp == live ->
-        Collect!list:max(List);
-    true ->
-        self() ! worker(List, Collect, death:start(60))
-    end.
+    death:gamble(Death),
+    Collect!list:max(List).
+  
 %% Wait for results from all workers. 
 
-collect(N, Maxes) when length(Maxes) < N ->
+collect(N, Maxes, L) when length(Maxes) < N ->
     receive 
 	{'EXIT', _PID, random_death} ->
-	    %spawn_link(fun() -> worker(Maxe,self(),death:start(60)) end);
-        collect(N, [-666|Maxes]);
+	    {value,{_,Value}} = lists:keysearch(_PID,1,L), 
+	    NewList = lists:keydelete(_PID,1,L),
+	    CollectPID = self(),
+	    collect(N, Maxes,[{spawn_link(fun() ->worker(Value,CollectPID , death:start(60))end),Value}|NewList]);
+	
 	{'EXIT', _PID, normal} ->
-	    collect(N, Maxes);
+	    collect(N, Maxes, L);
 	Max -> 
-	    collect(N, [Max|Maxes]) 
+	    collect(N, [Max|Maxes],L) 
     end;
 
-collect(_N, Maxes) ->
+collect(_N, Maxes,_) ->
     io:format("Collected Maxes = ~w~n", [Maxes]),
     Maxes.
 
