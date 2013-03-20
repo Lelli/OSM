@@ -136,9 +136,27 @@ lqr(L, N) ->
       T :: term(),
       N :: integer().
 
+split (L, N) ->
+    Q = length(L) div N,
+    splithelp(L, Q).
 
-split(L, N) ->
-    tbi.
+splithelp([],_) -> [];
+splithelp(L,Q) when Q > length(L) ->
+    L;
+splithelp(L,Q) ->
+    {Head,Tail} = lists:split(Q,L),
+    [Head | splithelp(Tail,Q)].
+
+
+%split(List, N) ->
+%    Q = length(List) div N,
+%    R = length(List) rem N,
+%    if R =:= 0 ->
+%        [lists:sublist(List, X, Q) || X <- lists:seq(1,length(List),Q)];
+%       R =/= 0 ->
+%        [lists:sublist(List, X, Q) || X <- lists:seq(1,length(List),Q)];
+
+
 
 
 
