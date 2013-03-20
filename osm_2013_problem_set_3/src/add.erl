@@ -1,7 +1,6 @@
 %% @doc Erlang mini project.
 -module(add).
--export([start/3, start/4, decode/1]).
--include_lib("eunit/include/eunit.hrl").
+-export([start/3, start/4, adder/4, manager/5,calculate/6,encode/2 ]).
 
 %% @doc Calculates A+B using only one process and returns the desired value in base Base.
 -spec start(A,B,Base) -> ok when 
@@ -19,15 +18,21 @@ start(A,B, Base) ->
 
 start(A,B,Base, Options) ->
     Maxlen = max(length(A),length(B)),
+    Opts = min(Maxlen,Options),
     Acorr = fill(A,Maxlen),
     Bcorr = fill(B,Maxlen),
-    Segsize = Maxlen div Options,
+    Segsize = Maxlen div Opts,
     {Clist, Rlist} = dispatch(Acorr,Bcorr,Segsize,Base,self()),
-    print(Clist),
-    print(Acorr),
-    print(Bcorr),
-    print(generate("-",Maxlen)),
-    print(Rlist).
+    print(lists:map(fun(X) -> X+48 end,Clist),""),
+    print(Acorr," "),
+    print(Bcorr," "),
+    print(generate("-",length(Rlist)+1),""),
+    if length(Rlist) =:= length(Acorr) ->
+	    Roff = " ";
+       true -> 
+	    Roff = ""
+    end,
+    print(Rlist,Roff).
 
 %% @doc Splits A and B into blocks of size Segsize and creates processes for each block that calculates the results.
 -spec dispatch(A,B,Segsize,Base,PID) -> ok when 
@@ -41,7 +46,7 @@ dispatch([],[],_,_,PID) ->
     receive
 	{[C|Clist], Rlist} ->
 	    if C =:= 1 ->
-		    {[C|Clist],[C|Rlist]};
+		    {[C|Clist],[49|Rlist]};
 	       C =:= 0 -> 
 		    {[C|Clist], Rlist}
 	    end
@@ -97,8 +102,9 @@ manager(A,B,Base,C,PID) ->
       Acc::list().
 calculate([],[],_,C,Pid,Acc) ->
     receive {Cin,Ain} ->
+	    {Cfix,_} = lists:split(length(C)-1,C),
 	    Aout = lists:append(Acc,Ain),
-	    Cout = lists:append(C,Cin),
+	    Cout = lists:append(Cfix,Cin),
 	    Pid ! {Cout,Aout}
     end;
   
@@ -126,13 +132,26 @@ fill(List,Limit) ->
 fillAux(0,List) ->
     List;
 fillAux(N,List) ->
-    fillAux(N-1,[0|List]).
+    fillAux(N-1,[48|List]).
 
 %% @doc Prints the list List.
--spec print(List) -> ok when 
-      List::list().
-print(List) ->
-    io:write("~n",List).
+-spec print(List,Offset) -> ok when 
+      List::list(),
+      Offset::string().
+print(List, Offset) ->
+    io:fwrite(intlist_to_string(List,Offset)),%%lists:flatten(Nested)).
+    io:fwrite("~n").
+
+intlist_to_string(L, Offset) ->
+    AtList = lists:map(fun(X) ->
+		      io_lib:write_atom(binary_to_term(<<131,100,0,1 ,X>>)) end,
+	      L),
+    UglyList = lists:foldr(fun(Char,Str) ->
+				   Char++Str end,"",AtList),
+    Offset++lists:filter(fun(X) ->
+		   X =/= 39 end, UglyList).
+    
+		      
 
 %% @doc Splits the list into two lists, the length of the first list is equal to Segsize.
 -spec split(List,Segsize) -> ok when 
@@ -151,26 +170,31 @@ split(List,Segsize) ->
       N::integer().
 generate(Str,N) ->
     genAux(Str,N,[]).
+
+
 %% @doc Help function to generate.
 -spec genAux(Str,N,A) -> ok when 
       Str::list(),
       N::integer(),
       A::list().
+
 genAux(_,0,A) ->
     A;
 genAux(Str,N,A) ->
-    genAux(Str,N-1,[Str|A]).
+    genAux(Str,N-1,Str++A).
 
 %% @doc Converts the first character into a decimal number.
 -spec decode([H|_]) -> ok when 
       H::integer().
-decode([H|_]) ->
-    Ascii = H,
-    if Ascii >= 48, Ascii =< 57
-       ->  Ascii - 48;
-       Ascii >= 65, Ascii =< 90
-       ->  Ascii - 55
-    end.
+decode(H) when H >=48, H =<57->
+    H - 48;
+decode(H) when H >=65, H =<90 ->
+    H -55;
+decode(H) ->
+    io:fwrite("~w", [H]),
+    0.
+
+
 
 %% @doc Converts a decimal number into base Base.
 -spec encode(Val,Base) -> ok when 
@@ -179,7 +203,12 @@ decode([H|_]) ->
 encode(Val,Base) ->
     Q = Val div Base,
     Rem = Val rem Base,
-    Rstr = io:format("~s",[[Rem]]),
+    %%Rstr = io:format("~s",[[Rem]]),
+    if Rem <10 ->
+	    Rstr = Rem+48;
+       Rem >=10 -> 
+	    Rstr = Rem+55
+    end,
     {Q,Rstr}.
     
     

@@ -26,7 +26,18 @@ loop(Fifo) ->
 	    loop(Fifo); 
 	{empty, PID} ->
 	    PID ! fifo:empty(Fifo),
-	    loop(Fifo)
+	    loop(Fifo);
+	{pop, PID} ->
+	    Bool = fifo:empty(Fifo),
+	    if Bool ->
+		    PID ! {error, empty_fifo};
+	       true ->
+		    {Val,NewFifo} = fifo:pop(Fifo),
+		    PID ! Val,
+		    loop(NewFifo)
+	    end;
+	{push,Val} ->
+	    loop(fifo:push(Fifo,Val))
     end.
 
 
@@ -60,7 +71,12 @@ empty(Fifo) ->
 -spec pop(Fifo) -> term() when Fifo::pfifo().
 
 pop(Fifo) ->
-    tbi.
+    Fifo ! {pop, self()},
+    receive
+	Val ->
+	    Val
+	 	
+    end.
 
 
 %% @doc Push a new value to Fifo. 
@@ -68,7 +84,7 @@ pop(Fifo) ->
       Fifo::pfifo(),
       Value::term().
 push(Fifo, Value) ->
-    ok.
+    Fifo ! {push,Value}.
     
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
