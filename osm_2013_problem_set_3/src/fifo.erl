@@ -24,8 +24,7 @@ size({fifo, In, Out}) ->
     length(In) + length(Out).
 
 %% @doc TODO Add a description
-%% TODO: add a -spec type declaration
-
+-spec push(Fifo, X) -> fifo().
 %% To make it fast to push new values, add a new value to the head of
 %% In.
 
@@ -34,8 +33,10 @@ push({fifo, In, Out}, X) ->
 
 %% @doc TODO Add a description
 %% @throws 'empty fifo'
-%% TODO: add a -spec type declaration
-
+-spec pop(Fifo) -> {Value, NewFifo} when
+      Fifo::fifo().
+-spec pop(Fifo) -> no_return(). when
+      Fifo::{fifo, [], []}.
 %% pop should return {Value, NewFifo}
 
 pop({fifo, [], []}) -> 
