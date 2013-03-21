@@ -10,7 +10,7 @@
       B::integer(), 
       Base::integer().
 start(A,B, Base) ->
-    start(A,B,Base,1).
+    start(A,B,Base,{false,{0,0}}).
 %% @doc Calculates A+B using Options processes and returns the desired value in base Base.
 -spec start(A,B,Base, Options) -> ok when 
       A::string(),
@@ -130,7 +130,9 @@ calculate([A|Alist],[B|Blist],Base,[C|Clist],PID,Acc,Sleep,{Min,Max}) ->
     Adec = decode(A),
     Bdec = decode(B),
     Result = Adec + Bdec + C,
-    timer:sleep(random:uniform(Max-Min)+Min),
+    if Sleep =:= true ->
+      timer:sleep(random:uniform(Max-Min)+Min)
+    end,
     {Cnew, Rnew} = encode(Result,Base),
     calculate(Alist,Blist,Base,[Cnew|[C|Clist]],PID,[Rnew|Acc],Sleep,{Min,Max}).
 
