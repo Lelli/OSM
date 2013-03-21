@@ -1,6 +1,6 @@
 %% @doc Erlang mini project.
 -module(add).
--export([start/3, start/4, adder/4, manager/5,calculate/6,encode/2 ]).
+-export([start/3, start/4, adder/6, manager/7,calculate/8,encode/2 ]).
 
 -include_lib("eunit/include/eunit.hrl").
 
@@ -16,17 +16,17 @@ start(A,B, Base) ->
       A::string(),
       B::string(), 
       Base::integer(),
-      Options::integer().
+      Options::tuple().
 
-start(A,B,Base, Options) ->
+start(A,B,Base, {Options,Sleep,{Min,Max}}) ->
     Maxlen = max(length(A),length(B)),
     Opts = min(Maxlen,Options),
     Acorr = fill(A,Maxlen),
     Bcorr = fill(B,Maxlen),
     Asplit =utils:split(Acorr,Opts),
     Bsplit = utils:split(Bcorr,Opts),
-    Segsize = Maxlen div Opts,
-    {Clist, Rlist} = dispatch(Asplit,Bsplit,Base,self()),
+    %Segsize = Maxlen div Opts,
+    {Clist, Rlist} = dispatch(Asplit,Bsplit,Base,self(),Sleep,{Min,Max}),
     print(lists:map(fun(X) -> X+48 end,Clist),""),
     print(Acorr," "),
     print(Bcorr," "),
@@ -39,12 +39,14 @@ start(A,B,Base, Options) ->
     print(Rlist,Roff).
 
 %% @doc Splits A and B into blocks of size Segsize and creates processes for each block that calculates the results.
--spec dispatch(A,B,Base,PID) -> ok when 
+-spec dispatch(A,B,Base,PID,Sleep,Time) -> ok when 
       A::list(),
       B::list(),
       Base::integer(),
-      PID::pid().
-dispatch([],[],_,PID) ->
+      PID::pid(),
+      Sleep::atom(),
+      Time::tuple().
+dispatch([],[],_,PID,_,_) ->
     PID ! {[0],[]},
     receive
 	{[C|Clist], Rlist} ->
@@ -54,9 +56,9 @@ dispatch([],[],_,PID) ->
 		    {[C|Clist], Rlist}
 	    end
     end;
-dispatch([Ah|At],[Bh|Bt],Base,PID) ->
-    NewPid = spawn(?MODULE, adder, [Ah,Bh,Base,PID]),
-    dispatch(At,Bt,Base,NewPid).
+dispatch([Ah|At],[Bh|Bt],Base,PID,Sleep,Time) ->
+    NewPid = spawn(?MODULE, adder, [Ah,Bh,Base,PID,Sleep,Time]),
+    dispatch(At,Bt,Base,NewPid,Sleep,Time).
 
 %%dispatch(A,B,Segsize,Base,PID)  -> 
  %%   {Ahead, Atail} = split(A,Segsize),
@@ -66,16 +68,19 @@ dispatch([Ah|At],[Bh|Bt],Base,PID) ->
 
 
 %% @doc Revereses the lists A and B and spawns two processes, one that counts with a carry bit and one that counts without a carry bit.
--spec adder(A,B,Base,PID) -> ok when 
+-spec adder(A,B,Base,PID,Sleep,Time) -> ok when 
       A::list(),
       B::list(),
       Base::integer(),
-      PID::pid().
-adder(A,B,Base,PID) ->
+      PID::pid(),
+      Sleep::atom(),
+      Time::tuple().
+      
+adder(A,B,Base,PID,Sleep,Time) ->
     Arev = lists:reverse(A),
     Brev = lists:reverse(B),
-    Man0 = spawn(?MODULE,manager,[Arev,Brev,Base,0,PID]),
-    Man1 = spawn(?MODULE,manager,[Arev,Brev,Base,1,PID]),
+    Man0 = spawn(?MODULE,manager,[Arev,Brev,Base,0,PID,Sleep,Time]),
+    Man1 = spawn(?MODULE,manager,[Arev,Brev,Base,1,PID,Sleep,Time]),
     receive
 	{C, Rlist} ->
 	    Man0 ! {C,Rlist},  
@@ -83,14 +88,16 @@ adder(A,B,Base,PID) ->
     end.
 
 %% @doc Checks if we have a carry bit or not and sends this information down to the child so that it can decide what to do.
--spec manager(A,B,Base,C,PID) -> ok when 
+-spec manager(A,B,Base,C,PID,Sleep,Time) -> ok when 
       A::list(),
       B::list(),
       C::list(),
       Base::integer(),
-      PID::pid().
-manager(A,B,Base,C,PID) ->
-    Child = spawn(?MODULE,calculate,[A,B,Base,[C|[]],PID,[]]),
+      PID::pid(),
+      Sleep::atom(),
+      Time::tuple().
+manager(A,B,Base,C,PID,Sleep,Time) ->
+    Child = spawn(?MODULE,calculate,[A,B,Base,[C|[]],PID,[],Sleep,Time]),
     receive
 	{[CarryIn|Clist],Rlist}->
 	    if CarryIn=:= C ->
@@ -101,14 +108,16 @@ manager(A,B,Base,C,PID) ->
     end.
 
 %% @doc Calculates the result of A and B and stores it in Acc.
--spec calculate(A,B,Base,C,PID,Acc) -> ok when 
+-spec calculate(A,B,Base,C,PID,Acc,Sleep,Time) -> ok when 
       A::list(),
       B::list(),
       C::list(),
       Base::integer(),
       PID::pid(),
-      Acc::list().
-calculate([],[],_,C,Pid,Acc) ->
+      Acc::list(),
+      Sleep::atom(),
+      Time::tuple().
+calculate([],[],_,C,Pid,Acc,_,_) ->
     receive {Cin,Ain} ->
 	    {Cfix,_} = lists:split(length(C)-1,C),
 	    Aout = lists:append(Acc,Ain),
@@ -117,12 +126,13 @@ calculate([],[],_,C,Pid,Acc) ->
     end;
   
 
-calculate([A|Alist],[B|Blist],Base,[C|Clist],PID,Acc) ->
+calculate([A|Alist],[B|Blist],Base,[C|Clist],PID,Acc,Sleep,{Min,Max}) ->
     Adec = decode(A),
     Bdec = decode(B),
     Result = Adec + Bdec + C,
+    timer:sleep(random:uniform(Max-Min)+Min),
     {Cnew, Rnew} = encode(Result,Base),
-    calculate(Alist,Blist,Base,[Cnew|[C|Clist]],PID,[Rnew|Acc]).
+    calculate(Alist,Blist,Base,[Cnew|[C|Clist]],PID,[Rnew|Acc],Sleep,{Min,Max}).
 
 %% @doc Adds zeros to the head of List until the length of List =:= Limit.
 -spec fill(List,Limit) -> ok when 
@@ -239,5 +249,5 @@ fill_test_() ->
     [?_assertEqual([48,48,49,50,51,52,53],fill([49,50,51,52,53],7)),
     ?_assertEqual([49,50,51,52,53],fill([49,50,51,52,53],5))].
 dispatch_test_() ->
-    [?_assertEqual({[0,0,0,0,0],[52,52,50,56]},dispatch([[50,50],[49,52]],[[50,50],[49,52]],10,self()))].
+    [?_assertEqual({[0,0,0,0,0],[52,52,50,56]},dispatch([[50,50],[49,52]],[[50,50],[49,52]],10,self(),true,{5,100}))].
 
