@@ -2,13 +2,15 @@
 -module(add).
 -export([start/3, start/4, adder/4, manager/5,calculate/6,encode/2 ]).
 
+-include_lib("eunit/include/eunit.hrl").
+
 %% @doc Calculates A+B using only one process and returns the desired value in base Base.
 -spec start(A,B,Base) -> ok when 
       A::integer(),
       B::integer(), 
       Base::integer().
 start(A,B, Base) ->
-    ok.
+    start(A,B,Base,1).
 %% @doc Calculates A+B using Options processes and returns the desired value in base Base.
 -spec start(A,B,Base, Options) -> ok when 
       A::string(),
@@ -21,8 +23,10 @@ start(A,B,Base, Options) ->
     Opts = min(Maxlen,Options),
     Acorr = fill(A,Maxlen),
     Bcorr = fill(B,Maxlen),
+    Asplit =utils:split(Acorr,Opts),
+    Bsplit = utils:split(Bcorr,Opts),
     Segsize = Maxlen div Opts,
-    {Clist, Rlist} = dispatch(Acorr,Bcorr,Segsize,Base,self()),
+    {Clist, Rlist} = dispatch(Asplit,Bsplit,Base,self()),
     print(lists:map(fun(X) -> X+48 end,Clist),""),
     print(Acorr," "),
     print(Bcorr," "),
@@ -35,13 +39,12 @@ start(A,B,Base, Options) ->
     print(Rlist,Roff).
 
 %% @doc Splits A and B into blocks of size Segsize and creates processes for each block that calculates the results.
--spec dispatch(A,B,Segsize,Base,PID) -> ok when 
+-spec dispatch(A,B,Base,PID) -> ok when 
       A::list(),
       B::list(),
-      Segsize::integer(),
       Base::integer(),
       PID::pid().
-dispatch([],[],_,_,PID) ->
+dispatch([],[],_,PID) ->
     PID ! {[0],[]},
     receive
 	{[C|Clist], Rlist} ->
@@ -51,11 +54,16 @@ dispatch([],[],_,_,PID) ->
 		    {[C|Clist], Rlist}
 	    end
     end;
-dispatch(A,B,Segsize,Base,PID)  -> 
-    {Ahead, Atail} = split(A,Segsize),
-    {Bhead, Btail} = split(B,Segsize),
-    NewPid = spawn(?MODULE,adder,[Ahead,Bhead,Base,PID]),
-    dispatch(Atail,Btail,Segsize,Base,NewPid).
+dispatch([Ah|At],[Bh|Bt],Base,PID) ->
+    NewPid = spawn(?MODULE, adder, [Ah,Bh,Base,PID]),
+    dispatch(At,Bt,Base,NewPid).
+
+%%dispatch(A,B,Segsize,Base,PID)  -> 
+ %%   {Ahead, Atail} = split(A,Segsize),
+   %%% {Bhead, Btail} = split(B,Segsize),
+ %%   NewPid = spawn(?MODULE,adder,[Ahead,Bhead,Base,PID]),
+   %% dispatch(Atail,Btail,Segsize,Base,NewPid).
+
 
 %% @doc Revereses the lists A and B and spawns two processes, one that counts with a carry bit and one that counts without a carry bit.
 -spec adder(A,B,Base,PID) -> ok when 
@@ -216,18 +224,20 @@ encode(Val,Base) ->
 % ---------------------- TEST -------------------
 
 decode_test_() ->
-    [?_assertEqual(17,decode("Hej")),
-    ?_assertEqual(2, decode("25"))].
+    [?_assertEqual(17,decode(72)),
+    ?_assertEqual(2, decode(50))].
 encode_test_() ->
-    [?_assertEqual("H",encode(17,26)),
-    ?_assertEqual(10,encode(112,11))].
+    [?_assertEqual({0,72},encode(17,26)),
+    ?_assertEqual({1,49},encode(11,10))].
 generate_test_() ->
-    [?_assertEqual(["A","A","A","A","A"],generate("A",5)),
-    ?_assertEqual(["-.-","-.-","-.-","-.-"],generate("-.-",4))].
+    [?_assertEqual("AAAAA",generate("A",5)),
+    ?_assertEqual("-.--.--.--.-",generate("-.-",4))].
 split_test_() ->
     [?_assertEqual({[1,2],[3,4,5,6,7,8]},split([1,2,3,4,5,6,7,8],2)),
     ?_assertEqual({[1,2,3,4,5,6,7,8],[]},split([1,2,3,4,5,6,7,8],9))].
 fill_test_() ->
-    [?_assertEqual([0,0,1,2,3,4,5],fill([1,2,3,4,5],7)),
-    ?_assertEqual([1,2,3,4,5],fill([1,2,3,4,5],5))].
+    [?_assertEqual([48,48,49,50,51,52,53],fill([49,50,51,52,53],7)),
+    ?_assertEqual([49,50,51,52,53],fill([49,50,51,52,53],5))].
+dispatch_test_() ->
+    [?_assertEqual({[0,0,0,0,0],[52,52,50,56]},dispatch([[50,50],[49,52]],[[50,50],[49,52]],10,self()))].
 

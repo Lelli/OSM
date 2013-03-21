@@ -138,15 +138,16 @@ lqr(L, N) ->
 
 split (L, N) ->
     Q = length(L) div N,
-    splithelp(L, Q).
-
-splithelp([],_) -> [];
-splithelp(L,Q) when Q > length(L) ->
-    L;
-splithelp(L,Q) ->
-    {Head,Tail} = lists:split(Q,L),
-    [Head | splithelp(Tail,Q)].
-
+    R = length(L) rem N,
+    splithelp(L, Q, R,[]).
+splithelp([],_,_,A) ->
+    lists:reverse(A);
+splithelp(L,Q,0,A) ->
+    {Lsplit,Ltail} = lists:split(Q,L),
+    splithelp(Ltail,Q,0,[Lsplit|A]); 
+splithelp(L,Q,R,A) ->
+    {Lsplit,Ltail} = lists:split(Q+1,L),
+    splithelp(Ltail,Q,R-1,[Lsplit|A]).
 
 %split(List, N) ->
 %    Q = length(List) div N,

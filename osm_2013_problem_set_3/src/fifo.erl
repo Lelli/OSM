@@ -24,7 +24,9 @@ size({fifo, In, Out}) ->
     length(In) + length(Out).
 
 %% @doc TODO Add a description
--spec push(Fifo, X) -> fifo().
+-spec push(Fifo, X) -> fifo() when
+    Fifo::fifo(),
+    X::term().
 %% To make it fast to push new values, add a new value to the head of
 %% In.
 
@@ -33,10 +35,8 @@ push({fifo, In, Out}, X) ->
 
 %% @doc TODO Add a description
 %% @throws 'empty fifo'
--spec pop(Fifo) -> {Value, NewFifo} when
+-spec pop(Fifo) -> {term(), fifo()} when
       Fifo::fifo().
--spec pop(Fifo) -> no_return(). when
-      Fifo::{fifo, [], []}.
 %% pop should return {Value, NewFifo}
 
 pop({fifo, [], []}) -> 
