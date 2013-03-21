@@ -16,14 +16,14 @@
 
 new() -> {fifo, [], []}.
  
-%% @doc TODO Add a description
+%% @doc Calculates the size of the fifo buffer.
 -spec size(Fifo) -> integer() when
       Fifo::fifo().
 
 size({fifo, In, Out}) ->
     length(In) + length(Out).
 
-%% @doc TODO Add a description
+%% @doc Pushes a new value to the queue.
 -spec push(Fifo, X) -> fifo() when
     Fifo::fifo(),
     X::term().
@@ -33,7 +33,7 @@ size({fifo, In, Out}) ->
 push({fifo, In, Out}, X) -> 
     {fifo,[X|In],Out}.
 
-%% @doc TODO Add a description
+%% @doc Pops the next value in order from the queue.
 %% @throws 'empty fifo'
 -spec pop(Fifo) -> {term(), fifo()} when
       Fifo::fifo().
@@ -55,7 +55,7 @@ pop({fifo, In, []}) ->
     pop({fifo,[],lists:reverse(In)}).
 
 
-%% @doc TODO Add a description
+%% @doc Returns true if the queue is empty, false if not.
 -spec empty(Fifo) -> boolean() when Fifo::fifo().
 
 empty({fifo, [], []}) ->
