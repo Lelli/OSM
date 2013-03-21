@@ -50,6 +50,7 @@ split(L, N) when length(L) < N ->
     L;
 
 %% Do the splitting
+split(L, N) ->
     split(L, N, []).
 
 %% An auxiliary recursive split function
