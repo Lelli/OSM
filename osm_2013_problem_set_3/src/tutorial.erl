@@ -221,7 +221,7 @@ char_to_lower(Char) when true ->
 -spec str_to_upper(string()) -> string().
 
 str_to_upper(String) ->
-    lists:map(char_to_upper(Char), String) -> UpperCase.
+    lists:map(char_to_upper(Char), String).
 
 
 %% @doc Convert a string to lower case. 
@@ -233,7 +233,7 @@ str_to_upper(String) ->
 -spec str_to_lower(string()) -> string().
 
 str_to_lower(String) ->
-    lists:map(char_to_lower(Char), String) -> LowerCase.
+    lists:map(char_to_lower(Char), String).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%  Fold %%%%%%%%%%
