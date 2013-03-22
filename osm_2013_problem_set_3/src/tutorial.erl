@@ -23,7 +23,7 @@ hello() ->
 %%%%%%%%%%  Recursive functions %%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%% @doc TODO: add description here
+%% @doc Prints "Hello!" N times, and writes N before each Hello.
 -spec hello(N::integer()) -> ok.
 
 hello(0) ->
@@ -68,7 +68,7 @@ fib(0) ->
 fib(1) -> 
     1;
 fib(N) when N > 0 -> 
-    tbi.
+    fib(N-1)+fib(N-2).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%  Tail Recursive functions %%%%%%%%%%
@@ -83,7 +83,7 @@ fac_tr(N) ->
 fac_tr(0, Acc) -> 
     Acc;
 fac_tr(N, Acc) ->
-    tbi.
+    fac_tr(N-1,Acc*N).
 
 %% @doc Calculates the Nth fibonacci number, implemented using tail
 %% recursion.
@@ -93,9 +93,9 @@ fib_tr(N) ->
     fib_tr(N, 0,1).
 
 fib_tr(0, Xi, Xii) -> 
-    tbi;
+    Xi.
 fib_tr(Iter, Xi, Xii) -> 
-    tbi.
+    fib_tr(Iter-1, Xii, Xii+Xi).
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -118,7 +118,7 @@ fib_tr(Iter, Xi, Xii) ->
 
 right_triangles(N) ->
     L = lists:seq(1, N),
-    tbi.
+    [{A,B,C} || A <- L, B <- L, C <- L, A*A+B*B =:= C*C].
 
 %% @doc Returns a list of tuples, where each tuple describes a caracter in the Simposon family.
 %%
@@ -168,13 +168,13 @@ simpsons() ->
       Name::string().
 
 simpsons(names) ->
-    tbi;
+    [A || {_,_,A} <- simpsons()];
 simpsons(males) ->
-    tbi;
+    [A || {_,B,A} <- simpsons(), B =:= male];
 simpsons(females) ->
-    tbi;
+    [A || {_,_,A} <- simpsons(), B =:= female];
 simpsons(pets) ->
-    tbi.
+    [A || {C,_,A} <- simpsons(), C=/= person].
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%  Guarded Functions  %%%%%%%%%%
@@ -191,7 +191,7 @@ simpsons(pets) ->
 -spec char_to_upper(char()) -> char().
 
 char_to_upper(Char) when true->
-    tbi.
+  Char-32.
 
 %% @doc Convert a character to lower case.
 %% === Example ===
@@ -204,7 +204,7 @@ char_to_upper(Char) when true->
 -spec char_to_lower(char()) -> char().
 
 char_to_lower(Char) when true ->
-    tbi.
+    Char+32.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%  Map  %%%%%%%%%%
@@ -221,7 +221,7 @@ char_to_lower(Char) when true ->
 -spec str_to_upper(string()) -> string().
 
 str_to_upper(String) ->
-    tbi.
+    lists:map(char_to_upper(Char), String) -> UpperCase.
 
 
 %% @doc Convert a string to lower case. 
@@ -233,7 +233,7 @@ str_to_upper(String) ->
 -spec str_to_lower(string()) -> string().
 
 str_to_lower(String) ->
-    tbi.
+    lists:map(char_to_lower(Char), String) -> LowerCase.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%  Fold %%%%%%%%%%
@@ -250,7 +250,10 @@ str_to_lower(String) ->
       M::integer().
 
 max([H | T]) ->
-    F = tbi,
+    F = fun(A,B) when 
+      A>B -> A;
+      (_,B) -> B
+    end,
     lists:foldl(F, H, T).
 		       
 
@@ -266,8 +269,7 @@ max([H | T]) ->
       Char::char().
       
 count(String, Char) ->
-
-    F = tbi,
+    F = lists:length([A || X <- String, X=:=Char]),
     
     lists:foldl(F, 0, String).
 
