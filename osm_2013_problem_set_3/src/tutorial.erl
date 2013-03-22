@@ -93,7 +93,7 @@ fib_tr(N) ->
     fib_tr(N, 0,1).
 
 fib_tr(0, Xi, Xii) -> 
-    Xi.
+    Xi;
 fib_tr(Iter, Xi, Xii) -> 
     fib_tr(Iter-1, Xii, Xii+Xi).
 
