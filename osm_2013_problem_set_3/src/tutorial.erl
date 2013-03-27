@@ -172,7 +172,7 @@ simpsons(names) ->
 simpsons(males) ->
     [A || {_,B,A} <- simpsons(), B =:= male];
 simpsons(females) ->
-    [A || {_,_,A} <- simpsons(), B =:= female];
+    [A || {_,B,A} <- simpsons(), B =:= female];
 simpsons(pets) ->
     [A || {C,_,A} <- simpsons(), C=/= person].
 
